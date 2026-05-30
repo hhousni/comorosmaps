@@ -6,7 +6,7 @@
 #'
 #' @param x     Name of the data set to use. The default is `comoros()`, It draws Comoro Islands as one object without commune.
 #' @param pref  Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)
-#' @param city  Include capital cities as point features ("city" = TRUE) or exclude them ("city" = FALSE). Default is FALSE.
+#' @param city  Include all cities as point features (`TRUE`) or exclude them (`FALSE`). Default is `FALSE`.
 #' @return The data set used is in `sf` format
 #' @export
 #' @importFrom sf st_geometry
@@ -26,12 +26,12 @@ comoros <- function(x = "country", pref = FALSE, city = FALSE) {
          "country" = {
            codes <- c("KM")
            if (pref) codes <- c(codes, paste0("KM", 11:33))
-           if (city) codes <- c(codes, "Moroni", "Mutsamudu", "Fomboni")
+           if (city) codes <- c(codes, "KM1c", "KM2c", "KM3c")
          },
          "island" = {
            codes <- c("KM1", "KM2", "KM3")
            if (pref) codes <- c(codes, paste0("KM", 11:33))
-           if (city) codes <- c(codes, "Moroni", "Mutsamudu", "Fomboni")
+           if (city) codes <- c(codes, "KM1c", "KM2c", "KM3c")
          },
          stop("Invalid argument for 'x'")
   )
@@ -45,7 +45,7 @@ comoros <- function(x = "country", pref = FALSE, city = FALSE) {
 #'
 #'
 #' @param pref  Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)
-#' @param city  Include the capital city Moroni as a point feature ("city" = TRUE) or exclude it ("city" = FALSE). Default is TRUE.
+#' @param city  Include all Grande Comore cities as point features (`TRUE`) or exclude them (`FALSE`). Default is `TRUE`.
 #' @return The data set used is in `sf` format
 #' @export
 #' @importFrom sf st_geometry
@@ -57,7 +57,7 @@ comoros <- function(x = "country", pref = FALSE, city = FALSE) {
 #' grandeComore (pref = TRUE)
 #'
 grandeComore <- function(pref = FALSE, city = TRUE) {
-  codes <- c("KM2", if (city) "Moroni", if (pref) paste0("KM", 21:29))
+  codes <- c("KM2", if (city) "KM2c", if (pref) paste0("KM", 21:29))
   km <- comoromaps_data %>% filter(adminCode %in% codes) %>% select(name, geometry)
   plot(sf::st_geometry(km))
   invisible(unique(km))
@@ -69,7 +69,7 @@ grandeComore <- function(pref = FALSE, city = TRUE) {
 #' Draw a map for Moheli Islands
 #'
 #' @param pref  Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)
-#' @param city  Include the capital city Fomboni as a point feature ("city" = TRUE) or exclude it ("city" = FALSE). Default is TRUE.
+#' @param city  Include all Mohéli cities as point features (`TRUE`) or exclude them (`FALSE`). Default is `TRUE`.
 #' @return The data set used is in `sf` format
 #' @export
 #' @importFrom sf st_geometry
@@ -80,7 +80,7 @@ grandeComore <- function(pref = FALSE, city = TRUE) {
 #' ## Map Moheli Island with prefecture area
 #' moheli (pref = TRUE)
 moheli <- function(pref = FALSE, city = TRUE) {
-  codes <- c("KM3", if (city) "Fomboni", if (pref) paste0("KM", 31:33))
+  codes <- c("KM3", if (city) "KM3c", if (pref) paste0("KM", 31:33))
   km <- comoromaps_data %>% filter(adminCode %in% codes) %>% select(name, geometry)
   plot(sf::st_geometry(km))
   invisible(unique(km))
@@ -91,7 +91,7 @@ moheli <- function(pref = FALSE, city = TRUE) {
 #' Draw a map for Anjouan Island
 #'
 #' @param pref  Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)
-#' @param city  Include the capital city Mutsamudu as a point feature ("city" = TRUE) or exclude it ("city" = FALSE). Default is TRUE.
+#' @param city  Include all Anjouan cities as point features (`TRUE`) or exclude them (`FALSE`). Default is `TRUE`.
 #' @return The data set used is in `sf` format
 #' @export
 #' @importFrom sf st_geometry
@@ -103,7 +103,7 @@ moheli <- function(pref = FALSE, city = TRUE) {
 #' anjouan (pref = TRUE)
 #'
 anjouan <- function(pref = FALSE, city = TRUE) {
-  codes <- c("KM1", if (city) "Mutsamudu", if (pref) paste0("KM", 11:15))
+  codes <- c("KM1", if (city) "KM1c", if (pref) paste0("KM", 11:15))
   km <- comoromaps_data %>% filter(adminCode %in% codes) %>% select(name, geometry)
   plot(sf::st_geometry(km))
   invisible(unique(km))
@@ -134,21 +134,13 @@ commune <- function(island = "all", city = FALSE) {
     "moheli"        = "KM3",
     stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
   )
-  # commune pcodes start with the island code (e.g. KM1xx, KM2xx, KM3xx)
   commune_codes <- comoromaps_data$adminCode[
     grepl(paste0("^(", paste(island_codes, collapse="|"), ")\\d{2}$"),
           comoromaps_data$adminCode)
   ]
-  cities <- if (city) {
-    switch(island,
-      "all"           = c("Moroni", "Mutsamudu", "Fomboni"),
-      "grande comore" = "Moroni",
-      "anjouan"       = "Mutsamudu",
-      "moheli"        = "Fomboni"
-    )
-  }
-  codes <- c(commune_codes, cities)
-  km <- comoromaps_data %>% filter(adminCode %in% codes | name %in% cities) %>% select(name, geometry)
+  city_codes <- if (city) paste0(island_codes, "c")
+  codes <- c(commune_codes, city_codes)
+  km <- comoromaps_data %>% filter(adminCode %in% codes) %>% select(name, geometry)
   plot(sf::st_geometry(km))
   invisible(unique(km))
 }

@@ -45,14 +45,20 @@ comoromaps_data <- sf::st_as_sf(tibble::as_tibble(comoromaps_data))
 km_cities  <- read_excel("data-raw/shp_files/km.xlsx")
 
 # 1.0 Data processing ----
+# Assign island-level adminCode so cities can be filtered per island:
+#   KM1c = Anjouan cities, KM2c = Grande Comore cities, KM3c = Mohéli cities
+island_code_map <- c("Grande Comore" = "KM2c", "Anjouan" = "KM1c", "Mohéli" = "KM3c")
 
-km_cities_sf = st_as_sf(km_cities, coords = c("lng", "lat"),
-                        crs = 4326, agr = "constant") %>%
-  select(1,3,8)
+km_cities_sf <- km_cities %>%
+  distinct(city, admin_name, .keep_all = TRUE) %>%          # remove duplicates
+  filter(!is.na(admin_name)) %>%                             # keep only mapped islands
+  mutate(adminCode = island_code_map[admin_name]) %>%
+  filter(!is.na(adminCode)) %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326, agr = "constant") %>%
+  select(name = city, adminCode, geometry)
 
 # 2.0 Data output ----
 comoromaps_data_cities <- sf::st_as_sf(tibble::as_tibble(km_cities_sf))
-names(comoromaps_data_cities) <- names(comoromaps_data)
 
 # 3.0 Join the two datasets
 
