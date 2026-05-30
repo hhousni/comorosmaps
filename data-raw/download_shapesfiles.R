@@ -4,7 +4,7 @@
 # https://data.humdata.org/dataset/cod-ab-com
 
 if (!require("pacman")) install.packages("pacman")
-p_load(sf,rgdal, dplyr) # Necessary package to load shp files
+p_load(sf, dplyr, readxl) # Necessary package to load shp files
 
 # Load the data
 admin0 <- st_read("data-raw/shp_files/com_admbnda_adm0_cosep_ocha_20191205.shp")
