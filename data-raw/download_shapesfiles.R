@@ -11,8 +11,8 @@ admin0 <- st_read("data-raw/shp_files/com_admbnda_adm0_cosep_ocha_20191205.shp")
 admin1 <- st_read("data-raw/shp_files/com_admbnda_adm1_cosep_ocha_20191205.shp")
 admin2 <- st_read("data-raw/shp_files/com_admbnda_adm2_cosep_ocha_20191205.shp")
 
-#comune level
-#admin3 <- st_read("data-raw/shp_files/com_admbnda_adm3_cosep_ocha_20191205.shp")
+# commune level
+admin3 <- st_read("data-raw/shp_files/com_admbnda_adm3_cosep_ocha_20191205.shp")
 
 # Remove unnecessary col
 
@@ -29,12 +29,12 @@ island <- admin1 %>%
 prefecture <- admin2 %>%
   select ("name"=ADM2_EN,"adminCode"=ADM2_PCODE,geometry)
 
-#commune <- admin2 %>%
-#  select ("name"=ADM2_EN,"adminCode"=ADM2_PCODE,geometry)
+commune <- admin3 %>%
+  select ("name"=ADM3_EN,"adminCode"=ADM3_PCODE,geometry)
 
-comoromaps_data <- rbind(country,island, prefecture) #comune
+comoromaps_data <- rbind(country, island, prefecture, commune)
 
-rm(admin0, admin1, admin2) #admin3
+rm(admin0, admin1, admin2, admin3)
 # Save the files
 
 comoromaps_data <- sf::st_as_sf(tibble::as_tibble(comoromaps_data))

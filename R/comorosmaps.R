@@ -109,3 +109,46 @@ anjouan <- function(pref = FALSE, city = TRUE) {
   invisible(unique(km))
 }
 
+#' Comoro Islands Communes
+#'
+#' Draw a map of Comoros at the commune level (admin3).
+#'
+#' @param island  Filter by island: `"grande comore"`, `"anjouan"`, `"moheli"`, or `"all"` (default).
+#' @param city    Include capital cities as point features (`TRUE`) or exclude them (`FALSE`). Default is `FALSE`.
+#' @return The data set used is in `sf` format
+#' @export
+#' @importFrom sf st_geometry
+#' @importFrom graphics plot
+#' @examples
+#' ## Map all communes
+#' commune()
+#' ## Map only Grande Comore communes
+#' commune(island = "grande comore")
+#' ## Map Anjouan communes with cities
+#' commune(island = "anjouan", city = TRUE)
+commune <- function(island = "all", city = FALSE) {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+  # commune pcodes start with the island code (e.g. KM1xx, KM2xx, KM3xx)
+  commune_codes <- comoromaps_data$adminCode[
+    grepl(paste0("^(", paste(island_codes, collapse="|"), ")\\d{2}$"),
+          comoromaps_data$adminCode)
+  ]
+  cities <- if (city) {
+    switch(island,
+      "all"           = c("Moroni", "Mutsamudu", "Fomboni"),
+      "grande comore" = "Moroni",
+      "anjouan"       = "Mutsamudu",
+      "moheli"        = "Fomboni"
+    )
+  }
+  codes <- c(commune_codes, cities)
+  km <- comoromaps_data %>% filter(adminCode %in% codes | name %in% cities) %>% select(name, geometry)
+  plot(sf::st_geometry(km))
+  invisible(unique(km))
+}

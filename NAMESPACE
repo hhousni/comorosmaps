@@ -2,6 +2,7 @@
 
 export(anjouan)
 export(comoros)
+export(commune)
 export(grandeComore)
 export(moheli)
 importFrom(dplyr,filter)
