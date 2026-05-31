@@ -138,7 +138,8 @@ anjouan <- function(pref = FALSE, city = TRUE) {
 #' ## Anjouan at commune level with names
 #' plot_map(island = "anjouan", commune = TRUE)
 plot_map <- function(island = "all", pref = FALSE, commune = FALSE,
-                     label_regions = NULL, city = TRUE, title = NULL) {
+                     label_regions = NULL, city = TRUE, title = NULL,
+                     data = NULL, var = NULL, join_by = "name", fill_label = NULL) {
   island_codes <- switch(island,
     "all"           = c("KM1", "KM2", "KM3"),
     "grande comore" = "KM2",
@@ -171,6 +172,14 @@ plot_map <- function(island = "all", pref = FALSE, commune = FALSE,
   region_polys <- comoromaps_data %>% filter(adminCode %in% region_codes)
   cities       <- comoromaps_data %>% filter(adminCode %in% paste0(island_codes, "c"))
 
+  # Choropleth: join user data to region polygons
+  choropleth <- !is.null(data) && !is.null(var) && length(region_codes) > 0
+  if (choropleth) {
+    if (is.null(fill_label)) fill_label <- var
+    region_polys <- dplyr::left_join(region_polys, data, by = c("name" = join_by))
+    region_polys$.choro_var <- region_polys[[var]]
+  }
+
   if (is.null(title)) {
     title <- switch(island,
       "all"           = "Comoro Islands",
@@ -186,8 +195,9 @@ plot_map <- function(island = "all", pref = FALSE, commune = FALSE,
   # Font size: smaller for communes (many polygons), larger for prefectures
   region_label_size <- if (commune) 2.0 else 2.8
 
+  island_base <- comoromaps_data %>% filter(adminCode %in% island_codes)
+
   p <- ggplot2::ggplot() +
-    ggplot2::geom_sf(data = polys, fill = "#f5f0e8", colour = "grey40", linewidth = 0.4) +
     ggplot2::theme_void() +
     ggplot2::theme(
       plot.title      = ggplot2::element_text(size = 14, face = "bold", hjust = 0.5,
@@ -196,6 +206,17 @@ plot_map <- function(island = "all", pref = FALSE, commune = FALSE,
       plot.margin     = ggplot2::margin(10, 10, 10, 10)
     ) +
     ggplot2::labs(title = title)
+
+  if (choropleth) {
+    p <- p +
+      ggplot2::geom_sf(data = island_base, fill = "#f5f0e8", colour = "grey40", linewidth = 0.4) +
+      ggplot2::geom_sf(data = region_polys, ggplot2::aes(fill = .choro_var),
+                       colour = "grey40", linewidth = 0.3) +
+      ggplot2::scale_fill_viridis_c(name = fill_label, option = "plasma", na.value = "grey80")
+  } else {
+    p <- p +
+      ggplot2::geom_sf(data = polys, fill = "#f5f0e8", colour = "grey40", linewidth = 0.4)
+  }
 
   # Label region names at polygon centroids
   if (label_regions && nrow(region_polys) > 0) {
@@ -297,7 +318,8 @@ commune <- function(island = "all", city = FALSE) {
 #' view_map()
 #' view_map(island = "anjouan", commune = TRUE, city = TRUE)
 #' }
-view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE, label_regions = TRUE) {
+view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE, label_regions = TRUE,
+                     data = NULL, var = NULL, join_by = "name", fill_label = NULL) {
   island_codes <- switch(island,
     "all"           = c("KM1", "KM2", "KM3"),
     "grande comore" = "KM2",
@@ -329,6 +351,16 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE,
         sf::st_transform(4326)
   }
 
+  # Choropleth: join user data to region polygons
+  choropleth <- !is.null(data) && !is.null(var) && !is.null(region_data)
+  choro_pal  <- NULL
+  if (choropleth) {
+    if (is.null(fill_label)) fill_label <- var
+    region_data <- dplyr::left_join(region_data, data, by = c("name" = join_by))
+    region_data$.choro_var <- region_data[[var]]
+    choro_pal <- leaflet::colorNumeric("viridis", domain = region_data$.choro_var, na.color = "#808080")
+  }
+
   cities_data <- NULL
   if (city) {
     cities_data <- comoromaps_data %>%
@@ -344,10 +376,12 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE,
   if (!is.null(region_data)) {
     layer_name <- if (commune) "Communes" else "Prefectures"
     label_size  <- if (commune) "10px" else "12px"
+    fill_col  <- if (choropleth) choro_pal(region_data$.choro_var) else "#d4e6f1"
+    fill_opac <- if (choropleth) 0.8 else 0.6
     poly_args <- list(
       data        = region_data,
-      fillColor   = "#d4e6f1",
-      fillOpacity = 0.6,
+      fillColor   = fill_col,
+      fillOpacity = fill_opac,
       color       = "#2471a3",
       weight      = 1.2,
       popup       = ~name,
@@ -397,6 +431,16 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE,
         popup        = ~name,
         group        = "Cities"
       )
+  }
+
+  if (choropleth) {
+    m <- m %>% leaflet::addLegend(
+      position = "bottomright",
+      pal      = choro_pal,
+      values   = region_data$.choro_var,
+      title    = fill_label,
+      opacity  = 0.8
+    )
   }
 
   layers <- c(if (!is.null(region_data)) if (commune) "Communes" else "Prefectures",
