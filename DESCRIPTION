@@ -16,6 +16,8 @@ Imports:
     sf,
     magrittr,
     dplyr,
+    ggplot2,
+    ggrepel,
 Suggests: 
     testthat (>= 3.0.0),
     readxl

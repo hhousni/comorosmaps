@@ -109,6 +109,92 @@ anjouan <- function(pref = FALSE, city = TRUE) {
   invisible(unique(km))
 }
 
+#' Plot a styled map of the Comoro Islands
+#'
+#' Creates a publication-ready map using ggplot2 with non-overlapping city
+#' labels via ggrepel.
+#'
+#' @param island  Which island to display: `"all"`, `"grande comore"`,
+#'   `"anjouan"`, or `"moheli"`. Default is `"all"`.
+#' @param pref    Show prefecture boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
+#' @param city    Show city points and labels (`TRUE`) or not (`FALSE`). Default `TRUE`.
+#' @param title   Map title. If `NULL` (default), a title is generated automatically.
+#'
+#' @return A `ggplot` object.
+#' @export
+#' @importFrom ggplot2 ggplot aes geom_sf theme_void theme labs element_text
+#'   element_rect geom_sf_text scale_fill_manual margin unit
+#' @importFrom ggrepel geom_label_repel
+#' @examples
+#' ## Styled map of all islands
+#' plot_map()
+#' ## Anjouan with cities and prefectures
+#' plot_map(island = "anjouan", pref = TRUE, city = TRUE)
+plot_map <- function(island = "all", pref = FALSE, city = TRUE, title = NULL) {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+
+  poly_codes <- island_codes
+  if (pref) {
+    pref_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d{2}$")
+    pref_codes   <- comoromaps_data$adminCode[grepl(pref_pattern, comoromaps_data$adminCode)]
+    poly_codes   <- c(poly_codes, pref_codes)
+  }
+
+  polys  <- comoromaps_data %>% filter(adminCode %in% poly_codes)
+  cities <- comoromaps_data %>% filter(adminCode %in% paste0(island_codes, "c"))
+
+  if (is.null(title)) {
+    title <- switch(island,
+      "all"           = "Comoro Islands",
+      "grande comore" = "Grande Comore",
+      "anjouan"       = "Anjouan",
+      "moheli"        = "Moh\u00e9li"
+    )
+    if (city) title <- paste0(title, " \u2014 Cities")
+  }
+
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = polys, fill = "#f5f0e8", colour = "grey40", linewidth = 0.4) +
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      plot.title      = ggplot2::element_text(size = 14, face = "bold", hjust = 0.5,
+                                              margin = ggplot2::margin(b = 8)),
+      plot.background = ggplot2::element_rect(fill = "white", colour = NA),
+      plot.margin     = ggplot2::margin(10, 10, 10, 10)
+    ) +
+    ggplot2::labs(title = title)
+
+  if (city && nrow(cities) > 0) {
+    p <- p +
+      ggplot2::geom_sf(data = cities, colour = "#e74c3c", size = 1.2, shape = 21,
+                       fill = "#e74c3c") +
+      ggrepel::geom_label_repel(
+        data               = cities,
+        ggplot2::aes(label = name, geometry = geometry),
+        stat               = "sf_coordinates",
+        size               = 2.2,
+        label.padding      = ggplot2::unit(0.12, "lines"),
+        label.size         = 0.15,
+        label.r            = ggplot2::unit(0.1, "lines"),
+        fill               = "white",
+        colour             = "#1a1a2e",
+        segment.colour     = "grey60",
+        segment.size       = 0.3,
+        max.overlaps       = Inf,
+        min.segment.length = 0.2,
+        seed               = 42
+      )
+  }
+
+  p
+}
+
 #' Comoro Islands Communes
 #'
 #' Draw a map of Comoros at the commune level (admin3).
