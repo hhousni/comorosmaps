@@ -273,3 +273,120 @@ commune <- function(island = "all", city = FALSE) {
   plot(sf::st_geometry(km))
   invisible(unique(km))
 }
+
+#' Interactive map of the Comoro Islands
+#'
+#' Opens an interactive leaflet map in the viewer or browser. Click polygons
+#' to see region names; hover over city markers to see city names.
+#'
+#' @param island  Which island to display: `"all"`, `"grande comore"`,
+#'   `"anjouan"`, or `"moheli"`. Default is `"all"`.
+#' @param pref    Show prefecture boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
+#' @param commune Show commune boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
+#'   When `TRUE`, overrides `pref`.
+#' @param city    Show city markers (`TRUE`) or not (`FALSE`). Default `TRUE`.
+#'
+#' @return A `leaflet` map widget.
+#' @export
+#' @importFrom leaflet leaflet addTiles addPolygons addCircleMarkers addLayersControl
+#'   layersControlOptions leafletOptions
+#' @importFrom sf st_transform
+#' @examples
+#' ## Interactive map of all islands
+#' \dontrun{
+#' view_map()
+#' view_map(island = "anjouan", commune = TRUE, city = TRUE)
+#' }
+view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE) {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+
+  if (commune) pref <- FALSE
+
+  # Island outlines
+  islands <- comoromaps_data %>%
+    filter(adminCode %in% island_codes) %>%
+    sf::st_transform(4326)
+
+  # Prefecture or commune polygons
+  region_data <- NULL
+  if (commune) {
+    comm_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d{2}$")
+    region_codes <- comoromaps_data$adminCode[grepl(comm_pattern, comoromaps_data$adminCode)]
+    if (length(region_codes) > 0)
+      region_data <- comoromaps_data %>% filter(adminCode %in% region_codes) %>%
+        sf::st_transform(4326)
+  } else if (pref) {
+    pref_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d$")
+    region_codes <- comoromaps_data$adminCode[grepl(pref_pattern, comoromaps_data$adminCode)]
+    if (length(region_codes) > 0)
+      region_data <- comoromaps_data %>% filter(adminCode %in% region_codes) %>%
+        sf::st_transform(4326)
+  }
+
+  cities_data <- NULL
+  if (city) {
+    cities_data <- comoromaps_data %>%
+      filter(adminCode %in% paste0(island_codes, "c")) %>%
+      sf::st_transform(4326)
+  }
+
+  m <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 9)) %>%
+    leaflet::addTiles(urlTemplate = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                      attribution = "\u00a9 OpenStreetMap contributors \u00a9 CARTO") %>%
+    leaflet::addPolygons(
+      data        = islands,
+      fillColor   = "#f5f0e8",
+      fillOpacity = 0.6,
+      color       = "#555555",
+      weight      = 1.5,
+      popup       = ~name,
+      group       = "Islands"
+    )
+
+  if (!is.null(region_data)) {
+    layer_name <- if (commune) "Communes" else "Prefectures"
+    m <- m %>%
+      leaflet::addPolygons(
+        data        = region_data,
+        fillColor   = "#d4e6f1",
+        fillOpacity = 0.4,
+        color       = "#2471a3",
+        weight      = 1,
+        popup       = ~name,
+        label       = ~name,
+        group       = layer_name
+      )
+  }
+
+  if (!is.null(cities_data)) {
+    m <- m %>%
+      leaflet::addCircleMarkers(
+        data         = cities_data,
+        radius       = 4,
+        color        = "#e74c3c",
+        fillColor    = "#e74c3c",
+        fillOpacity  = 0.8,
+        stroke       = TRUE,
+        weight       = 1,
+        opacity      = 1,
+        label        = ~name,
+        popup        = ~name,
+        group        = "Cities"
+      )
+  }
+
+  layers <- c("Islands",
+              if (!is.null(region_data)) if (commune) "Communes" else "Prefectures",
+              if (!is.null(cities_data)) "Cities")
+
+  m %>% leaflet::addLayersControl(
+    overlayGroups = layers,
+    options       = leaflet::layersControlOptions(collapsed = FALSE)
+  )
+}
