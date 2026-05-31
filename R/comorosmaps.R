@@ -452,3 +452,78 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE,
     options       = leaflet::layersControlOptions(collapsed = FALSE)
   )
 }
+
+#' Get commune boundaries
+#'
+#' Returns commune (admin3) polygons as an `sf` object. Useful for custom
+#' spatial analysis, joining your own data, or exporting to GeoJSON/CSV.
+#'
+#' @param island Filter by island: `"grande comore"`, `"anjouan"`, `"moheli"`,
+#'   or `"all"` (default).
+#' @return An `sf` data frame with columns `name`, `adminCode`, and `geometry`.
+#' @export
+#' @examples
+#' communes <- get_communes()
+#' anjouan_communes <- get_communes(island = "anjouan")
+get_communes <- function(island = "all") {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+  pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d{2}$")
+  comoromaps_data %>%
+    filter(grepl(pattern, adminCode)) %>%
+    select(name, adminCode, geometry)
+}
+
+#' Get prefecture boundaries
+#'
+#' Returns prefecture (admin2) polygons as an `sf` object.
+#'
+#' @param island Filter by island: `"grande comore"`, `"anjouan"`, `"moheli"`,
+#'   or `"all"` (default).
+#' @return An `sf` data frame with columns `name`, `adminCode`, and `geometry`.
+#' @export
+#' @examples
+#' prefectures <- get_prefectures()
+#' gc_prefs <- get_prefectures(island = "grande comore")
+get_prefectures <- function(island = "all") {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+  pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d$")
+  comoromaps_data %>%
+    filter(grepl(pattern, adminCode)) %>%
+    select(name, adminCode, geometry)
+}
+
+#' Get city locations
+#'
+#' Returns city point features as an `sf` object.
+#'
+#' @param island Filter by island: `"grande comore"`, `"anjouan"`, `"moheli"`,
+#'   or `"all"` (default).
+#' @return An `sf` data frame with columns `name`, `adminCode`, and `geometry`.
+#' @export
+#' @examples
+#' cities <- get_cities()
+#' moheli_cities <- get_cities(island = "moheli")
+get_cities <- function(island = "all") {
+  island_codes <- switch(island,
+    "all"           = c("KM1", "KM2", "KM3"),
+    "grande comore" = "KM2",
+    "anjouan"       = "KM1",
+    "moheli"        = "KM3",
+    stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
+  )
+  comoromaps_data %>%
+    filter(adminCode %in% paste0(island_codes, "c")) %>%
+    select(name, adminCode, geometry)
+}

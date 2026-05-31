@@ -1,7 +1,7 @@
 Package: comorosmaps
 Type: Package
 Title: Comoro Islands Maps
-Version: 1.6.0
+Version: 1.6.1
 Authors@R: 
     person("Housni", "Hassani", , "happrend2@gmail.com", 
     role = c("aut", "cre"))
