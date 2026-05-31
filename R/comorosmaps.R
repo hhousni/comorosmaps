@@ -114,23 +114,31 @@ anjouan <- function(pref = FALSE, city = TRUE) {
 #' Creates a publication-ready map using ggplot2 with non-overlapping city
 #' labels via ggrepel.
 #'
-#' @param island  Which island to display: `"all"`, `"grande comore"`,
+#' @param island        Which island to display: `"all"`, `"grande comore"`,
 #'   `"anjouan"`, or `"moheli"`. Default is `"all"`.
-#' @param pref    Show prefecture boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
-#' @param city    Show city points and labels (`TRUE`) or not (`FALSE`). Default `TRUE`.
-#' @param title   Map title. If `NULL` (default), a title is generated automatically.
+#' @param pref          Show prefecture boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
+#' @param commune       Show commune boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
+#'   When `TRUE`, overrides `pref`.
+#' @param label_regions Label prefecture or commune names inside their borders
+#'   (`TRUE`) or not (`FALSE`). Default `TRUE` when `pref` or `commune` is `TRUE`.
+#' @param city          Show city points and labels (`TRUE`) or not (`FALSE`). Default `TRUE`.
+#' @param title         Map title. If `NULL` (default), a title is generated automatically.
 #'
 #' @return A `ggplot` object.
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_sf theme_void theme labs element_text
 #'   element_rect geom_sf_text scale_fill_manual margin unit
 #' @importFrom ggrepel geom_label_repel
+#' @importFrom sf st_centroid st_coordinates
 #' @examples
 #' ## Styled map of all islands
 #' plot_map()
-#' ## Anjouan with cities and prefectures
-#' plot_map(island = "anjouan", pref = TRUE, city = TRUE)
-plot_map <- function(island = "all", pref = FALSE, city = TRUE, title = NULL) {
+#' ## Anjouan with prefecture names inside borders
+#' plot_map(island = "anjouan", pref = TRUE)
+#' ## Anjouan at commune level with names
+#' plot_map(island = "anjouan", commune = TRUE)
+plot_map <- function(island = "all", pref = FALSE, commune = FALSE,
+                     label_regions = NULL, city = TRUE, title = NULL) {
   island_codes <- switch(island,
     "all"           = c("KM1", "KM2", "KM3"),
     "grande comore" = "KM2",
@@ -139,15 +147,29 @@ plot_map <- function(island = "all", pref = FALSE, city = TRUE, title = NULL) {
     stop("Invalid 'island'. Use 'all', 'grande comore', 'anjouan', or 'moheli'.")
   )
 
+  # Commune overrides pref
+  if (commune) pref <- FALSE
+
+  # Default label_regions to TRUE when any region level is active
+  if (is.null(label_regions)) label_regions <- (pref || commune)
+
+  # Build polygon codes
   poly_codes <- island_codes
-  if (pref) {
-    pref_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d{2}$")
-    pref_codes   <- comoromaps_data$adminCode[grepl(pref_pattern, comoromaps_data$adminCode)]
-    poly_codes   <- c(poly_codes, pref_codes)
+  region_codes <- character(0)
+
+  if (commune) {
+    comm_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d{2}$")
+    region_codes <- comoromaps_data$adminCode[grepl(comm_pattern, comoromaps_data$adminCode)]
+    poly_codes   <- c(poly_codes, region_codes)
+  } else if (pref) {
+    pref_pattern <- paste0("^(", paste(island_codes, collapse = "|"), ")\\d$")
+    region_codes <- comoromaps_data$adminCode[grepl(pref_pattern, comoromaps_data$adminCode)]
+    poly_codes   <- c(poly_codes, region_codes)
   }
 
-  polys  <- comoromaps_data %>% filter(adminCode %in% poly_codes)
-  cities <- comoromaps_data %>% filter(adminCode %in% paste0(island_codes, "c"))
+  polys        <- comoromaps_data %>% filter(adminCode %in% poly_codes)
+  region_polys <- comoromaps_data %>% filter(adminCode %in% region_codes)
+  cities       <- comoromaps_data %>% filter(adminCode %in% paste0(island_codes, "c"))
 
   if (is.null(title)) {
     title <- switch(island,
@@ -156,8 +178,13 @@ plot_map <- function(island = "all", pref = FALSE, city = TRUE, title = NULL) {
       "anjouan"       = "Anjouan",
       "moheli"        = "Moh\u00e9li"
     )
-    if (city) title <- paste0(title, " \u2014 Cities")
+    if (commune)    title <- paste0(title, " \u2014 Communes")
+    else if (pref)  title <- paste0(title, " \u2014 Prefectures")
+    if (city)       title <- paste0(title, if (commune || pref) " & Cities" else " \u2014 Cities")
   }
+
+  # Font size: smaller for communes (many polygons), larger for prefectures
+  region_label_size <- if (commune) 2.0 else 2.8
 
   p <- ggplot2::ggplot() +
     ggplot2::geom_sf(data = polys, fill = "#f5f0e8", colour = "grey40", linewidth = 0.4) +
@@ -170,17 +197,33 @@ plot_map <- function(island = "all", pref = FALSE, city = TRUE, title = NULL) {
     ) +
     ggplot2::labs(title = title)
 
+  # Label region names at polygon centroids
+  if (label_regions && nrow(region_polys) > 0) {
+    suppressWarnings({
+      centroids <- sf::st_centroid(region_polys)
+    })
+    p <- p +
+      ggplot2::geom_sf_text(
+        data     = centroids,
+        ggplot2::aes(label = name),
+        size     = region_label_size,
+        colour   = "#2c3e50",
+        fontface = "bold",
+        check_overlap = FALSE
+      )
+  }
+
   if (city && nrow(cities) > 0) {
     p <- p +
-      ggplot2::geom_sf(data = cities, colour = "#e74c3c", size = 1.2, shape = 21,
+      ggplot2::geom_sf(data = cities, colour = "#e74c3c", size = 1.0, shape = 21,
                        fill = "#e74c3c") +
       ggrepel::geom_label_repel(
         data               = cities,
         ggplot2::aes(label = name, geometry = geometry),
         stat               = "sf_coordinates",
-        size               = 2.2,
-        label.padding      = ggplot2::unit(0.12, "lines"),
-        label.size         = 0.15,
+        size               = 2.0,
+        label.padding      = ggplot2::unit(0.10, "lines"),
+        label.size         = 0.10,
         label.r            = ggplot2::unit(0.1, "lines"),
         fill               = "white",
         colour             = "#1a1a2e",
