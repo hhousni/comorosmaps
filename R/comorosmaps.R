@@ -297,7 +297,7 @@ commune <- function(island = "all", city = FALSE) {
 #' view_map()
 #' view_map(island = "anjouan", commune = TRUE, city = TRUE)
 #' }
-view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE) {
+view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE, label_regions = TRUE) {
   island_codes <- switch(island,
     "all"           = c("KM1", "KM2", "KM3"),
     "grande comore" = "KM2",
@@ -343,17 +343,31 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE)
   # Draw regions FIRST (as fill layer), then island border on top
   if (!is.null(region_data)) {
     layer_name <- if (commune) "Communes" else "Prefectures"
-    m <- m %>%
-      leaflet::addPolygons(
-        data        = region_data,
-        fillColor   = "#d4e6f1",
-        fillOpacity = 0.6,
-        color       = "#2471a3",
-        weight      = 1.2,
-        popup       = ~name,
-        label       = ~name,
-        group       = layer_name
+    label_size  <- if (commune) "10px" else "12px"
+    poly_args <- list(
+      data        = region_data,
+      fillColor   = "#d4e6f1",
+      fillOpacity = 0.6,
+      color       = "#2471a3",
+      weight      = 1.2,
+      popup       = ~name,
+      group       = layer_name
+    )
+    if (label_regions) {
+      poly_args$label        <- ~name
+      poly_args$labelOptions <- leaflet::labelOptions(
+        permanent  = TRUE,
+        direction  = "center",
+        textOnly   = TRUE,
+        style      = list(
+          "font-size"   = label_size,
+          "font-weight" = "bold",
+          "color"       = "#1a1a2e",
+          "text-shadow" = "1px 1px 2px white, -1px -1px 2px white"
+        )
       )
+    }
+    m <- do.call(leaflet::addPolygons, c(list(m), poly_args))
   }
 
   # Island outline drawn on top — border only when regions are present
