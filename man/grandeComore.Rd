@@ -4,12 +4,12 @@
 \alias{grandeComore}
 \title{Grande Comore}
 \usage{
-grandeComore(x = "grande comore", pref = FALSE)
+grandeComore(pref = FALSE, city = TRUE)
 }
 \arguments{
-\item{x}{Name of the data set to use. The default is \code{grandeComore()}, It draws Grande Comore Island as one object without prefecture.}
-
 \item{pref}{Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)}
+
+\item{city}{Include all Grande Comore cities as point features (\code{TRUE}) or exclude them (\code{FALSE}). Default is \code{TRUE}.}
 }
 \value{
 The data set used is in \code{sf} format

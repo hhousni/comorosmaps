@@ -4,12 +4,12 @@
 \alias{anjouan}
 \title{Anjouan}
 \usage{
-anjouan(x = "anjouan", pref = FALSE)
+anjouan(pref = FALSE, city = TRUE)
 }
 \arguments{
-\item{x}{Name of the data set to use. The default is \code{anjouan()}, It draws Anjouan Island as one object without prefecture.}
-
 \item{pref}{Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)}
+
+\item{city}{Include all Anjouan cities as point features (\code{TRUE}) or exclude them (\code{FALSE}). Default is \code{TRUE}.}
 }
 \value{
 The data set used is in \code{sf} format

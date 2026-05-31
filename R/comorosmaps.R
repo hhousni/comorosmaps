@@ -123,6 +123,12 @@ anjouan <- function(pref = FALSE, city = TRUE) {
 #'   (`TRUE`) or not (`FALSE`). Default `TRUE` when `pref` or `commune` is `TRUE`.
 #' @param city          Show city points and labels (`TRUE`) or not (`FALSE`). Default `TRUE`.
 #' @param title         Map title. If `NULL` (default), a title is generated automatically.
+#' @param data          Optional data frame to use for a choropleth fill. Must contain
+#'   a column matching region names and a numeric column specified by `var`.
+#' @param var           Name of the numeric column in `data` to use for choropleth fill.
+#' @param join_by       Name of the column in `data` that matches the `name` column
+#'   in the spatial data. Default is `"name"`.
+#' @param fill_label    Legend title for the choropleth scale. Defaults to the value of `var`.
 #'
 #' @return A `ggplot` object.
 #' @export
@@ -306,6 +312,12 @@ commune <- function(island = "all", city = FALSE) {
 #' @param commune Show commune boundaries (`TRUE`) or not (`FALSE`). Default `FALSE`.
 #'   When `TRUE`, overrides `pref`.
 #' @param city    Show city markers (`TRUE`) or not (`FALSE`). Default `TRUE`.
+#' @param label_regions Show permanent region name labels on polygons (`TRUE`) or
+#'   not (`FALSE`). Default `TRUE`.
+#' @param data          Optional data frame to use for a choropleth fill.
+#' @param var           Name of the numeric column in `data` for choropleth fill.
+#' @param join_by       Column in `data` matching the region `name` column. Default `"name"`.
+#' @param fill_label    Legend title for the choropleth scale. Defaults to `var`.
 #'
 #' @return A `leaflet` map widget.
 #' @export

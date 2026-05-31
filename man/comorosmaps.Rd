@@ -2,6 +2,7 @@
 % Please edit documentation in R/comorosmaps_package.R
 \docType{package}
 \name{comorosmaps}
+\alias{comorosmaps-package}
 \alias{comorosmaps}
 \title{comorosmaps: Comoro Islands Maps}
 \description{

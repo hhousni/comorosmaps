@@ -4,12 +4,14 @@
 \alias{comoros}
 \title{Comoro Islands}
 \usage{
-comoros(x = "country", pref = FALSE)
+comoros(x = "country", pref = FALSE, city = FALSE)
 }
 \arguments{
 \item{x}{Name of the data set to use. The default is \code{comoros()}, It draws Comoro Islands as one object without commune.}
 
 \item{pref}{Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)}
+
+\item{city}{Include all cities as point features (\code{TRUE}) or exclude them (\code{FALSE}). Default is \code{FALSE}.}
 }
 \value{
 The data set used is in \code{sf} format

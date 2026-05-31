@@ -4,12 +4,12 @@
 \alias{moheli}
 \title{Moheli}
 \usage{
-moheli(x = "moheli", pref = FALSE)
+moheli(pref = FALSE, city = TRUE)
 }
 \arguments{
-\item{x}{Name of the data set to use. The default is \code{moheli()}, It draws Moheli Islands as one object without prefecture.}
-
 \item{pref}{Choose to map with prefecture area ("pref" = TRUE) or without prefecture area ("pref" = FALSE)}
+
+\item{city}{Include all Mohéli cities as point features (\code{TRUE}) or exclude them (\code{FALSE}). Default is \code{TRUE}.}
 }
 \value{
 The data set used is in \code{sf} format
