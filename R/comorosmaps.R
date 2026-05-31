@@ -338,31 +338,35 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE)
 
   m <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 9)) %>%
     leaflet::addTiles(urlTemplate = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-                      attribution = "\u00a9 OpenStreetMap contributors \u00a9 CARTO") %>%
-    leaflet::addPolygons(
-      data        = islands,
-      fillColor   = "#f5f0e8",
-      fillOpacity = 0.6,
-      color       = "#555555",
-      weight      = 1.5,
-      popup       = ~name,
-      group       = "Islands"
-    )
+                      attribution = "\u00a9 OpenStreetMap contributors \u00a9 CARTO")
 
+  # Draw regions FIRST (as fill layer), then island border on top
   if (!is.null(region_data)) {
     layer_name <- if (commune) "Communes" else "Prefectures"
     m <- m %>%
       leaflet::addPolygons(
         data        = region_data,
         fillColor   = "#d4e6f1",
-        fillOpacity = 0.4,
+        fillOpacity = 0.6,
         color       = "#2471a3",
-        weight      = 1,
+        weight      = 1.2,
         popup       = ~name,
         label       = ~name,
         group       = layer_name
       )
   }
+
+  # Island outline drawn on top — border only when regions are present
+  m <- m %>%
+    leaflet::addPolygons(
+      data        = islands,
+      fillColor   = "#f5f0e8",
+      fillOpacity = if (!is.null(region_data)) 0 else 0.5,
+      color       = "#333333",
+      weight      = if (!is.null(region_data)) 2.0 else 1.5,
+      popup       = ~name,
+      group       = "Islands"
+    )
 
   if (!is.null(cities_data)) {
     m <- m %>%
@@ -381,8 +385,8 @@ view_map <- function(island = "all", pref = FALSE, commune = FALSE, city = TRUE)
       )
   }
 
-  layers <- c("Islands",
-              if (!is.null(region_data)) if (commune) "Communes" else "Prefectures",
+  layers <- c(if (!is.null(region_data)) if (commune) "Communes" else "Prefectures",
+              "Islands",
               if (!is.null(cities_data)) "Cities")
 
   m %>% leaflet::addLayersControl(
