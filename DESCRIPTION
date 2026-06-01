@@ -5,7 +5,10 @@ Version: 1.6.1
 Authors@R: 
     person("Housni", "Hassani", , "housni.hassani@comoresopendata.org", 
     role = c("aut", "cre"))
-Description: Maps of Comoro Islands. Layers include the country coastline, each island coastline and administrative regions boundaries.
+Description: Provides static and interactive maps of the Comoro Islands at four
+    administrative levels: country, island, prefecture, and commune. Includes
+    tools for choropleth visualisation using 'ggplot2' and 'leaflet', and
+    functions to retrieve the underlying spatial datasets as 'sf' objects.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
