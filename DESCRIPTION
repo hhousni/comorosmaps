@@ -3,7 +3,7 @@ Type: Package
 Title: Comoro Islands Maps
 Version: 1.6.1
 Authors@R: 
-    person("Housni", "Hassani", , "happrend2@gmail.com", 
+    person("Housni", "Hassani", , "housni.hassani@comoresopendata.org", 
     role = c("aut", "cre"))
 Description: Maps of Comoro Islands. Layers include the country coastline, each island coastline and administrative regions boundaries.
 License: MIT + file LICENSE
